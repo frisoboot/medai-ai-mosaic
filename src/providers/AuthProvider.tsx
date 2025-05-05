@@ -10,6 +10,8 @@ type AuthContextType = {
   session: Session | null;
   loading: boolean;
   signIn: (email: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  signUpWithPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -20,6 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -31,6 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (event === 'SIGNED_IN') {
           console.log('User signed in:', currentSession?.user);
+          navigate('/dashboard');
         }
       }
     );
@@ -43,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const signIn = async (email: string) => {
     setLoading(true);
@@ -74,6 +78,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const signInWithPassword = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Ingelogd",
+        description: "U bent succesvol ingelogd.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Inloggen mislukt",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUpWithPassword = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Account aangemaakt",
+        description: "U kunt nu inloggen met uw e-mailadres en wachtwoord.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Registratie mislukt",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     setLoading(true);
     try {
@@ -94,7 +155,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signInWithPassword, signUpWithPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );

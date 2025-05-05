@@ -8,19 +8,32 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
-  const { user, loading, signIn } = useAuth();
+  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const { user, loading, signIn, signInWithPassword, signUpWithPassword } = useAuth();
   
   // Redirect if already logged in to dashboard
   if (user && !loading) {
     return <Navigate to="/dashboard" replace />;
   }
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleMagicLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await signIn(email);
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (authMode === "signin") {
+      await signInWithPassword(email, password);
+    } else {
+      await signUpWithPassword(email, password);
+    }
   };
   
   return (
@@ -42,33 +55,90 @@ const Auth = () => {
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mailadres</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="uw@email.nl"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+          <Tabs defaultValue="password" className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="password">Email & Wachtwoord</TabsTrigger>
+              <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
+            </TabsList>
             
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={loading || !email.trim()}
-            >
-              {loading ? "Even geduld..." : "Inloggen met Magic Link"}
-            </Button>
-          </form>
+            <TabsContent value="password">
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-pw">E-mailadres</Label>
+                  <Input
+                    id="email-pw"
+                    type="email"
+                    placeholder="uw@email.nl"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Wachtwoord</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Uw wachtwoord"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="flex gap-4 pt-2">
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={loading || !email.trim() || !password.trim()}
+                    onClick={() => setAuthMode("signin")}
+                  >
+                    {loading ? "Even geduld..." : "Inloggen"}
+                  </Button>
+                  
+                  <Button 
+                    type="submit"
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading || !email.trim() || !password.trim()}
+                    onClick={() => setAuthMode("signup")}
+                  >
+                    Registreren
+                  </Button>
+                </div>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="magic-link">
+              <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-ml">E-mailadres</Label>
+                  <Input
+                    id="email-ml"
+                    type="email"
+                    placeholder="uw@email.nl"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading || !email.trim()}
+                >
+                  {loading ? "Even geduld..." : "Inloggen met Magic Link"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
         
         <CardFooter className="flex flex-col text-center text-sm text-gray-500">
           <p>
-            We sturen een inloglink naar uw e-mailadres.
-            <br />Geen account? Door in te loggen wordt er een account aangemaakt.
+            Geen account? Registreer via de knop hierboven.
           </p>
         </CardFooter>
       </Card>
