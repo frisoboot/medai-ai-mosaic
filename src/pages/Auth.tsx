@@ -13,8 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-  const { user, loading, signIn, signInWithPassword, signUpWithPassword } = useAuth();
+  const { user, loading, signIn, signInWithPassword } = useAuth();
   
   // Redirect if already logged in to dashboard
   if (user && !loading) {
@@ -28,12 +27,7 @@ const Auth = () => {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (authMode === "signin") {
-      await signInWithPassword(email, password);
-    } else {
-      await signUpWithPassword(email, password);
-    }
+    await signInWithPassword(email, password);
   };
   
   return (
@@ -87,24 +81,13 @@ const Auth = () => {
                   />
                 </div>
                 
-                <div className="flex gap-4 pt-2">
+                <div className="pt-2">
                   <Button 
                     type="submit" 
                     className="w-full"
                     disabled={loading || !email.trim() || !password.trim()}
-                    onClick={() => setAuthMode("signin")}
                   >
                     {loading ? "Even geduld..." : "Inloggen"}
-                  </Button>
-                  
-                  <Button 
-                    type="submit"
-                    variant="outline"
-                    className="w-full"
-                    disabled={loading || !email.trim() || !password.trim()}
-                    onClick={() => setAuthMode("signup")}
-                  >
-                    Registreren
                   </Button>
                 </div>
               </form>
@@ -138,7 +121,7 @@ const Auth = () => {
         
         <CardFooter className="flex flex-col text-center text-sm text-gray-500">
           <p>
-            Geen account? Registreer via de knop hierboven.
+            Neem contact op met de beheerder voor een account.
           </p>
         </CardFooter>
       </Card>

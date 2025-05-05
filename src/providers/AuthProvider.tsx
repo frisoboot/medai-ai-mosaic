@@ -11,7 +11,6 @@ type AuthContextType = {
   loading: boolean;
   signIn: (email: string) => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
-  signUpWithPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -105,36 +104,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUpWithPassword = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Account aangemaakt",
-        description: "U kunt nu inloggen met uw e-mailadres en wachtwoord.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Registratie mislukt",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signOut = async () => {
     setLoading(true);
     try {
@@ -155,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signInWithPassword, signUpWithPassword, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signInWithPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );
