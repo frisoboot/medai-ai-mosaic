@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 type AuthContextType = {
   user: User | null;
@@ -59,12 +60,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       toast({
-        title: "Check your email",
-        description: "We sent you a login link. Be sure to check your spam folder.",
+        title: "Check uw e-mail",
+        description: "We hebben een inloglink gestuurd. Controleer ook uw spam folder.",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Fout",
         description: error.message,
         variant: "destructive",
       });
@@ -78,12 +79,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await supabase.auth.signOut();
       toast({
-        title: "Signed out",
-        description: "You have successfully signed out.",
+        title: "Uitgelogd",
+        description: "U bent succesvol uitgelogd.",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Fout",
         description: error.message,
         variant: "destructive",
       });

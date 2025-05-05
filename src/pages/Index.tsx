@@ -9,9 +9,9 @@ const Index = () => {
   const [showSummaryOnly, setShowSummaryOnly] = useState(false);
   const { user, loading } = useAuth();
   
-  // If not logged in and not loading, redirect to auth page
+  // If not logged in and not loading, redirect to landing page
   if (!user && !loading) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
   
   // Show loading state while checking authentication

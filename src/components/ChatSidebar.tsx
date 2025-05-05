@@ -91,7 +91,9 @@ export const ChatSidebar = ({ showSummaryOnly, setShowSummaryOnly }: ChatSidebar
           <Button 
             variant="ghost" 
             className="w-full justify-start px-4 mb-2" 
-            onClick={signOut}
+            onClick={() => {
+              signOut();
+            }}
           >
             <LogOut size={18} className="mr-2" />
             Uitloggen
