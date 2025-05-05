@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export interface ModelAnswer {
@@ -25,6 +26,8 @@ export const ChatMessage = ({
   timestamp,
   showSummaryOnly = false
 }: ChatMessageProps) => {
+  const [selectedModelIndex, setSelectedModelIndex] = useState(0);
+  
   const formattedTime = new Intl.DateTimeFormat("nl", {
     hour: "2-digit",
     minute: "2-digit"
@@ -53,7 +56,7 @@ export const ChatMessage = ({
             </div>
           )}
           
-          {!showSummaryOnly && (
+          {!showSummaryOnly && modelAnswers.length > 0 && (
             <div className="overflow-x-auto">
               <div className="flex border-b border-gray-200 dark:border-gray-800">
                 {modelAnswers.map((answer, index) => (
@@ -61,8 +64,11 @@ export const ChatMessage = ({
                     key={answer.model}
                     className={cn(
                       "px-4 py-2 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800",
-                      index === 0 ? "text-medical-primary border-b-2 border-medical-primary" : "text-gray-500"
+                      index === selectedModelIndex 
+                        ? "text-medical-primary border-b-2 border-medical-primary" 
+                        : "text-gray-500"
                     )}
+                    onClick={() => setSelectedModelIndex(index)}
                   >
                     {answer.model}
                   </div>
@@ -71,11 +77,11 @@ export const ChatMessage = ({
               
               <div className="p-4">
                 <div className="text-sm whitespace-pre-wrap">
-                  {modelAnswers[0]?.text || "Geen antwoord beschikbaar"}
+                  {modelAnswers[selectedModelIndex]?.text || "Geen antwoord beschikbaar"}
                 </div>
                 <div className="mt-3 text-xs text-gray-500 flex items-center justify-between">
-                  <span>Tokens: {modelAnswers[0]?.tokens || 0}</span>
-                  <span>Latentie: {modelAnswers[0]?.latency || 0}ms</span>
+                  <span>Tokens: {modelAnswers[selectedModelIndex]?.tokens || 0}</span>
+                  <span>Latentie: {modelAnswers[selectedModelIndex]?.latency || 0}ms</span>
                 </div>
               </div>
             </div>

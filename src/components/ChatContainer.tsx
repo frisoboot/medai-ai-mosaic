@@ -7,6 +7,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Json } from "@/integrations/supabase/types";
+import { multiConsult } from "@/services/aiService";
 
 // Interfaces for our data types
 interface ChatEntry {
@@ -37,30 +38,6 @@ export const ChatContainer = ({ showSummaryOnly }: ChatContainerProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-
-  // Mock data for demonstration - will be replaced with actual API calls
-  const MOCK_ANSWERS: ModelAnswer[] = [
-    {
-      model: "GPT-4 Turbo",
-      text: "Dit lijkt op basis van de symptomen op een acute sinusitis (voorhoofdsholteontsteking). Typisch hiervoor zijn de frontale hoofdpijn, druk rond de ogen en purulente rinorroe. Bij een virale oorzaak kunnen patiënten vaak met symptomatische behandeling geholpen worden. Adviseer decongestiva, pijnstilling en zoutwater neusspoelen. Bij aanhoudende klachten >10 dagen, ernstige pijn of koorts kan een antibioticum overwogen worden (amoxicilline).",
-      tokens: 435,
-      latency: 1240
-    },
-    {
-      model: "Claude 3",
-      text: "De symptomen wijzen op een waarschijnlijke acute rhinosinusitis. Met de voorhoofds- en periorbitale pijn, purulente rinorroe en beginnende koorts past dit bij een bacteriële infectie van de sinussen. Aanbevolen behandeling: analgetica (paracetamol/NSAID), nasale corticosteroïden en overweeg antibiotica gezien de purulente afscheiding en beginnende koorts. Amoxicilline zou een geschikte eerste keuze zijn volgens de NHG-Standaard. Adviseer ook stoomtherapie en adequate hydratatie.",
-      tokens: 390,
-      latency: 980
-    },
-    {
-      model: "Mixtral 8x7B",
-      text: "De patiënt presenteert zich met symptomen die passen bij acute rhinosinusitis. De combinatie van frontale hoofdpijn die verergert bij vooroverbuigen, purulente nasale afscheiding en drukgevoel rond de ogen zijn kenmerkend. Volgens de NHG-standaard is het beleid primair symptomatisch met pijnstilling (paracetamol of NSAID) en eventueel xylometazoline neusdruppels. Gezien de subfebriele temperatuur en purulente afscheiding is er mogelijk sprake van een bacteriële component. Overweeg antibiotica (amoxicilline) als symptomen >7-10 dagen aanhouden of bij verslechtering.",
-      tokens: 420,
-      latency: 690
-    }
-  ];
-
-  const MOCK_SUMMARY = "Op basis van de symptomen (frontale hoofdpijn, druk rond de ogen, purulente rinorroe en subfebriele temperatuur) is er waarschijnlijk sprake van acute bacteriële rhinosinusitis. Adviseer primair symptomatische behandeling met pijnstilling (paracetamol/NSAID), decongestiva en neusspoelen. Overweeg antibiotica (amoxicilline) bij aanhoudende klachten >7-10 dagen, verslechtering van symptomen of hoge koorts.";
 
   // Helper function to convert ModelAnswer[] to Json compatible format
   const modelAnswersToJson = (answers: ModelAnswer[]): Json => {
@@ -131,8 +108,8 @@ export const ChatContainer = ({ showSummaryOnly }: ChatContainerProps) => {
           isUser: false,
           content: "Antwoord op uw vraag:",
           timestamp: new Date(entry.created_at),
-          modelAnswers: jsonToModelAnswers(entry.answers_json) || MOCK_ANSWERS,
-          summary: entry.summary || MOCK_SUMMARY
+          modelAnswers: jsonToModelAnswers(entry.answers_json),
+          summary: entry.summary || ""
         });
       });
       
@@ -165,32 +142,41 @@ export const ChatContainer = ({ showSummaryOnly }: ChatContainerProps) => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
-    // Simulate API call delay
-    setTimeout(async () => {
+    try {
+      // Call the multiConsult function with the user's message
+      const response = await multiConsult(message);
+      
+      // Create the AI response entry
       const aiResponse: ChatEntry = {
         id: (Date.now() + 1).toString(),
         isUser: false,
         content: "Antwoord op uw vraag:",
         timestamp: new Date(),
-        modelAnswers: MOCK_ANSWERS,
-        summary: MOCK_SUMMARY
+        modelAnswers: response.answers,
+        summary: response.summary
       };
       
+      // Add the AI response to messages
       setMessages(prev => [...prev, aiResponse]);
-      setIsLoading(false);
       
       // Save to Supabase
       try {
         await supabase.from('consult_log').insert({
           user_id: user.id,
           question: message,
-          summary: MOCK_SUMMARY,
-          answers_json: modelAnswersToJson(MOCK_ANSWERS)
+          summary: response.summary,
+          answers_json: modelAnswersToJson(response.answers)
         });
       } catch (error) {
         console.error('Error saving chat to Supabase:', error);
+        toast.error("Uw vraag en antwoord konden niet worden opgeslagen");
       }
-    }, 2000);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      toast.error("Er is een fout opgetreden bij het verwerken van uw vraag");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
