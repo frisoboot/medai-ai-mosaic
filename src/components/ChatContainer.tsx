@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import { Json } from "@/integrations/supabase/types";
 
 // Interfaces for our data types
 interface ChatEntry {
@@ -17,12 +18,13 @@ interface ChatEntry {
   summary?: string;
 }
 
+// Modified interface to match Supabase types
 interface ConsultLogEntry {
   id: string;
   user_id: string;
   question: string;
   summary: string | null;
-  answers_json: ModelAnswer[] | null;
+  answers_json: Json | null;
   created_at: string;
 }
 
@@ -59,6 +61,33 @@ export const ChatContainer = ({ showSummaryOnly }: ChatContainerProps) => {
   ];
 
   const MOCK_SUMMARY = "Op basis van de symptomen (frontale hoofdpijn, druk rond de ogen, purulente rinorroe en subfebriele temperatuur) is er waarschijnlijk sprake van acute bacteriële rhinosinusitis. Adviseer primair symptomatische behandeling met pijnstilling (paracetamol/NSAID), decongestiva en neusspoelen. Overweeg antibiotica (amoxicilline) bij aanhoudende klachten >7-10 dagen, verslechtering van symptomen of hoge koorts.";
+
+  // Helper function to convert ModelAnswer[] to Json compatible format
+  const modelAnswersToJson = (answers: ModelAnswer[]): Json => {
+    return answers as unknown as Json;
+  };
+
+  // Helper function to convert Json to ModelAnswer[]
+  const jsonToModelAnswers = (json: Json | null): ModelAnswer[] | undefined => {
+    if (!json) return undefined;
+    try {
+      // Convert Json to ModelAnswer[] with type checking
+      const answers = json as unknown as ModelAnswer[];
+      // Validate that the structure matches ModelAnswer
+      if (Array.isArray(answers) && answers.every(answer => 
+        'model' in answer && 
+        'text' in answer && 
+        'tokens' in answer && 
+        'latency' in answer
+      )) {
+        return answers;
+      }
+      return undefined;
+    } catch (e) {
+      console.error("Error converting JSON to ModelAnswers:", e);
+      return undefined;
+    }
+  };
 
   // Fetch chat history from Supabase
   const { data: chatHistory } = useQuery({
@@ -102,7 +131,7 @@ export const ChatContainer = ({ showSummaryOnly }: ChatContainerProps) => {
           isUser: false,
           content: "Antwoord op uw vraag:",
           timestamp: new Date(entry.created_at),
-          modelAnswers: entry.answers_json || MOCK_ANSWERS,
+          modelAnswers: jsonToModelAnswers(entry.answers_json) || MOCK_ANSWERS,
           summary: entry.summary || MOCK_SUMMARY
         });
       });
@@ -156,7 +185,7 @@ export const ChatContainer = ({ showSummaryOnly }: ChatContainerProps) => {
           user_id: user.id,
           question: message,
           summary: MOCK_SUMMARY,
-          answers_json: MOCK_ANSWERS
+          answers_json: modelAnswersToJson(MOCK_ANSWERS)
         });
       } catch (error) {
         console.error('Error saving chat to Supabase:', error);
